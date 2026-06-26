@@ -1,22 +1,33 @@
 """
-URL configuration for core project.
+core/urls.py — asosiy URL konfiguratsiyasi.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+Barcha app'lar /api/v1/ prefiksi ostida.
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+
+API_PREFIX = "api/v1/"
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+
+    # Auth: login, pin-login, refresh, /me
+    path(API_PREFIX, include("tenancy.urls")),
+
+    # Menu: categories, products, public QR menu
+    path(API_PREFIX, include("menu.urls")),
+
+    # Orders: tables, orders, status updates
+    path(API_PREFIX, include("orders.urls")),
+
+    # Inventory: ingredients, recipes, stock, movements
+    path(API_PREFIX, include("inventory.urls")),
+
+    # Payments: payments, refunds, commissions
+    path(API_PREFIX, include("payments.urls")),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

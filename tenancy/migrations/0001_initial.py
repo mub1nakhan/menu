@@ -176,7 +176,7 @@ class Migration(migrations.Migration):
                         serialize=False,
                     ),
                 ),
-                ("email", models.EmailField(max_length=254, unique=True)),
+                ("email", models.EmailField(max_length=254)),
                 ("full_name", models.CharField(max_length=150)),
                 ("phone", models.CharField(blank=True, max_length=30, null=True)),
                 (

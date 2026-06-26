@@ -27,7 +27,7 @@ class TableViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Table.objects.filter(restaurant_id=self.request.user.restaurant_id)
+        return Table.objects.filter(restaurant_id=self.request.user.restaurant_id).order_by("branch", "label")
 
     def perform_create(self, serializer):
         token = secrets.token_urlsafe(16)

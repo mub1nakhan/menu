@@ -176,9 +176,8 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     
     username = None
 
-    email = models.EmailField(
-        unique=True
-    )
+    # unique per-restaurant enforced by UniqueConstraint below, not globally
+    email = models.EmailField()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
