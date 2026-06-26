@@ -172,7 +172,20 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     )
     role = models.ForeignKey(Role, on_delete=models.PROTECT, related_name="users")
 
-    email = models.EmailField()
+    
+    
+    username = None
+
+    email = models.EmailField(
+        unique=True
+    )
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
+    
+    
+    
+    # email = models.EmailField()
     full_name = models.CharField(max_length=150)
     phone = models.CharField(max_length=30, blank=True, null=True)
     pin_code_hash = models.CharField(
