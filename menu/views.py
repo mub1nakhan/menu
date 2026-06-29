@@ -139,21 +139,26 @@ class PublicMenuView(viewsets.ReadOnlyModelViewSet):
         return ctx
 
     def list(self, request, *args, **kwargs):
-        """Mahsulotlarni kategoriyalar bo'yicha guruhlaydi."""
+        """Mahsulotlarni kategoriyalar bo'yicha guruhlaydi (N+1 yo'q)."""
         qs = self.get_queryset()
-        serializer = self.get_serializer(qs, many=True)
-        data = serializer.data
-
-        # Kategoriyalar bo'yicha guruhlash
         lang = request.query_params.get("lang", "uz")
+
+        # Barcha kategoriyalarni bitta so'rovda olamiz — N+1 oldini olish
+        cat_ids = qs.values_list("category_id", flat=True).distinct()
+        categories = {
+            str(cat.id): cat
+            for cat in MenuCategory.objects.filter(id__in=cat_ids)
+        }
+
+        serializer = self.get_serializer(qs, many=True)
         grouped = {}
-        for item in data:
+        for item in serializer.data:
             cat_id = str(item["category"])
             if cat_id not in grouped:
-                try:
-                    cat = MenuCategory.objects.get(id=cat_id)
+                cat = categories.get(cat_id)
+                if cat:
                     cat_name = cat.name_i18n.get(lang) or cat.name_i18n.get("uz") or cat_id
-                except MenuCategory.DoesNotExist:
+                else:
                     cat_name = cat_id
                 grouped[cat_id] = {"category_id": cat_id, "category_name": cat_name, "products": []}
             grouped[cat_id]["products"].append(item)

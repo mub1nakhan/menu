@@ -179,12 +179,6 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     # unique per-restaurant enforced by UniqueConstraint below, not globally
     email = models.EmailField()
 
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
-    
-    
-    
-    # email = models.EmailField()
     full_name = models.CharField(max_length=150)
     phone = models.CharField(max_length=30, blank=True, null=True)
     pin_code_hash = models.CharField(

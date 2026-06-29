@@ -1,69 +1,50 @@
 """
-tenancy/permissions.py
+tenancy/backend.py
 
-RBAC permission classes for DRF views/viewsets.
+Custom Django authentication backend.
+Looks up users by (restaurant_id, email) together — not just email globally.
+This is required because the same email can exist in multiple restaurants.
 
-Tenant scoping is NOT done here — that happens in each app's queryset
-(filter by request.user.restaurant_id). This module only answers
-"is this role allowed to call this endpoint at all".
-
-request.user is the authenticated User instance (SimpleJWT resolves the
-JWT's user_id claim back to a real User via the DB on every request, so
-request.user.role is always fresh — unlike the role *string* embedded in
-the token, which is a snapshot from login time and only used for quick
-client-side UI decisions, never for server-side authorization).
+Registered in settings.py:
+    AUTHENTICATION_BACKENDS = ["tenancy.backend.TenantAuthBackend"]
 """
-from rest_framework.permissions import BasePermission
+from django.contrib.auth.backends import ModelBackend
 
-from tenancy.models import UserRole
+from tenancy.models import User
 
 
-class HasAnyRole(BasePermission):
+class TenantAuthBackend(ModelBackend):
     """
-    Usage:
-        permission_classes = [HasAnyRole.for_roles(UserRole.OWNER, UserRole.BRANCH_MANAGER)]
-    """
-    allowed_roles: tuple[str, ...] = ()
-
-    def has_permission(self, request, view) -> bool:
-        user = request.user
-        if not user or not user.is_authenticated:
-            return False
-        return user.role.code in self.allowed_roles
-
-    @classmethod
-    def for_roles(cls, *roles: str):
-        return type("HasAnyRoleScoped", (cls,), {"allowed_roles": tuple(roles)})
-
-
-class IsOwnerOrSuperAdmin(HasAnyRole):
-    allowed_roles = (UserRole.OWNER, UserRole.SUPER_ADMIN)
-
-
-class IsBranchStaffOrAbove(HasAnyRole):
-    """Owner, branch manager, or super_admin — i.e. anyone who manages a branch's operations."""
-    allowed_roles = (UserRole.OWNER, UserRole.BRANCH_MANAGER, UserRole.SUPER_ADMIN)
-
-
-class IsKitchenOrServiceStaff(HasAnyRole):
-    """Waiter, chef, cashier — front-of-house and kitchen operational roles."""
-    allowed_roles = (UserRole.WAITER, UserRole.CHEF, UserRole.CASHIER)
-
-
-class SameBranchOnly(BasePermission):
-    """
-    Object-level check: branch-scoped staff (branch_id is not None) can only
-    touch objects belonging to their own branch. Owners/super_admins
-    (branch_id is None) pass through — restaurant-level scoping still
-    applies via the queryset filter.
-
-    Usage in a viewset:
-        permission_classes = [IsAuthenticated, SameBranchOnly]
-        # the object must have a `.branch_id` attribute
+    Authenticates by (restaurant_id, email, password).
+    
+    The `authenticate()` call in TenantTokenObtainPairSerializer passes
+    `restaurant_id` as a keyword argument — this backend picks it up.
+    
+    Falls back to None (not an exception) when credentials don't match,
+    so Django can try the next backend in the list if any.
     """
 
-    def has_object_permission(self, request, view, obj) -> bool:
-        user = request.user
-        if user.branch_id is None:
-            return True
-        return getattr(obj, "branch_id", None) == user.branch_id
+    def authenticate(self, request, email=None, password=None, restaurant_id=None, **kwargs):
+        if not email or not password or not restaurant_id:
+            return None
+
+        try:
+            user = User.objects.select_related("role", "restaurant", "branch").get(
+                email=email,
+                restaurant_id=restaurant_id,
+            )
+        except User.DoesNotExist:
+            # Run the default password hasher to avoid timing attacks
+            User().set_password(password)
+            return None
+
+        if user.check_password(password) and self.user_can_authenticate(user):
+            return user
+
+        return None
+
+    def get_user(self, user_id):
+        try:
+            return User.objects.select_related("role", "restaurant", "branch").get(pk=user_id)
+        except User.DoesNotExist:
+            return None
