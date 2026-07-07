@@ -9,7 +9,7 @@ import {
   Package, CreditCard, GitBranch, LogOut, ChefHat, User
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 const NAV = [
   { href: '/dashboard',           icon: LayoutDashboard, label: "Bosh sahifa" },
@@ -23,17 +23,20 @@ const NAV = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, setUser, logout, isAuthenticated } = useAuthStore()
+  const { user, setUser, logout } = useAuthStore()
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
-    if (!token) { router.push('/login'); return }
+    if (!token) {
+      router.push('/login')
+      return
+    }
     if (!user) {
       authApi.me()
-        .then(res => setUser(res.data))
+        .then((res) => setUser(res.data))
         .catch(() => { router.push('/login') })
     }
-  }, [])
+  }, [router, setUser, user])
 
   const handleLogout = () => {
     logout()

@@ -1,6 +1,7 @@
 """
 tenancy/tests.py — Auth va tenant scoping testlari.
 """
+from django.core import checks
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
@@ -89,6 +90,12 @@ class TenantScopingTests(TestCase):
         ids = [b["id"] for b in resp.data["results"]]
         self.assertIn(str(self.b1.id), ids)
         self.assertNotIn(str(self.b2.id), ids)
+
+
+class SystemCheckTests(TestCase):
+    def test_tenant_user_model_does_not_raise_auth_w004(self):
+        issues = checks.run_checks(include_deployment_checks=False)
+        self.assertFalse(any(issue.id == "auth.W004" for issue in issues))
 
 
 class BranchCRUDTests(TestCase):

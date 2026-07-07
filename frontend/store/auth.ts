@@ -18,6 +18,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setTokens: (access, refresh) => {
     localStorage.setItem('access_token', access)
     localStorage.setItem('refresh_token', refresh)
+    set({ isAuthenticated: Boolean(access && refresh) })
   },
 
   logout: () => {
