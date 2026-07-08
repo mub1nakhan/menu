@@ -117,7 +117,7 @@ Response:
 ---
 
 ### Create Restaurant (Admin Only)
-**POST** `/restaurants`
+**POST** `/s`
 
 Request:
 ```json
@@ -132,7 +132,7 @@ Request:
 
 ---
 
-### Update Restaurant
+### Update 
 **PUT** `/restaurants/{restaurant_id}`
 
 Request:

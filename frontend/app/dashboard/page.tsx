@@ -2,9 +2,11 @@
 import { useMemo } from 'react'
 import { useAuthStore } from '@/store/auth'
 import StatCard from '@/components/ui/stat-card'
-import { ShoppingBag, Package, CreditCard, Clock3, TrendingUp } from 'lucide-react'
+import { ShoppingBag, Package, Clock3, TrendingUp } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { ordersApi, inventoryApi, paymentsApi } from '@/lib/api'
+import { translate } from '@/lib/i18n'
+import { useLocaleStore } from '@/store/locale'
 
 const STATS = [
   {
@@ -39,8 +41,10 @@ const STATS = [
 
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user)
+  const locale = useLocaleStore((state) => state.locale)
+  const t = (key: string) => translate(key, locale)
 
-  const { data: statsData, isLoading } = useQuery<{
+  const { data: statsData } = useQuery<{
     ordersCount: number
     lowStockCount: number
     paymentsTotal: number
@@ -59,7 +63,7 @@ export default function DashboardPage() {
         const paymentsTotal = paymentsRes?.data?.total ?? paymentsRes?.data?.sum ?? 0
 
         return { ordersCount, lowStockCount, paymentsTotal }
-      } catch (err) {
+      } catch {
         return { ordersCount: 0, lowStockCount: 0, paymentsTotal: 0 }
       }
     },
@@ -68,12 +72,12 @@ export default function DashboardPage() {
 
   const actions = useMemo(
     () => [
-      { title: 'Menyuni boshqarish', subtitle: 'Taomlar, kategoriyalar, narxlar', href: '/dashboard/menu' },
-      { title: 'Buyurtmalarni tekshirish', subtitle: 'Yangi va tayyor buyurtmalar', href: '/dashboard/orders' },
-      { title: 'Ombor zaxirasini kuzatish', subtitle: 'Past qoldiq va harakatlar', href: '/dashboard/inventory' },
-      { title: 'Filiallarni boshqarish', subtitle: 'Filiallar va xodimlar', href: '/dashboard/branches' },
+      { title: locale === 'en' ? 'Manage the menu' : 'Menyuni boshqarish', subtitle: locale === 'en' ? 'Items, categories, prices' : 'Taomlar, kategoriyalar, narxlar', href: '/dashboard/menu' },
+      { title: locale === 'en' ? 'Review orders' : 'Buyurtmalarni tekshirish', subtitle: locale === 'en' ? 'New and ready orders' : 'Yangi va tayyor buyurtmalar', href: '/dashboard/orders' },
+      { title: locale === 'en' ? 'Track stock' : 'Ombor zaxirasini kuzatish', subtitle: locale === 'en' ? 'Low stock and movement' : 'Past qoldiq va harakatlar', href: '/dashboard/inventory' },
+      { title: locale === 'en' ? 'Manage branches' : 'Filiallarni boshqarish', subtitle: locale === 'en' ? 'Branches and staff' : 'Filiallar va xodimlar', href: '/dashboard/branches' },
     ],
-    []
+    [locale]
   )
 
   return (
@@ -84,16 +88,16 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-600">Dashboard</p>
               <h1 className="mt-3 text-3xl font-semibold text-gray-900 sm:text-4xl">
-                {user?.restaurant_name || 'Restoran'} boshqaruvi
+                {user?.restaurant_name || (locale === 'en' ? 'Restaurant' : 'Restoran')} {locale === 'en' ? 'overview' : 'boshqaruvi'}
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600">
-                Eng muhim ko'rsatkichlarni shu yerdan kuzatib boring: buyurtmalar, ombor, to'lovlar va filiallar.
+                {t('dashboard.subtitle')}
               </p>
             </div>
             <div className="rounded-3xl bg-slate-900 px-6 py-5 text-white shadow-lg">
               <p className="text-sm font-medium text-slate-300">Bugungi foyda taxmini</p>
               <p className="mt-2 text-2xl font-semibold">\u20B8 1,245,300</p>
-              <p className="mt-1 text-sm text-slate-400">Oldingi kundan 18% ko'p</p>
+              <p className="mt-1 text-sm text-slate-400">Oldingi kundan 18% ko&apos;p</p>
             </div>
           </div>
         </section>
@@ -115,29 +119,29 @@ export default function DashboardPage() {
           <section className="lg:col-span-2 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-900">Kutilayotgan buyurtmalar</p>
-                <p className="mt-1 text-sm text-gray-500">Eng yangi buyurtmalar va ularning holati.</p>
+                <p className="text-sm font-semibold text-gray-900">{locale === 'en' ? 'Pending orders' : 'Kutilayotgan buyurtmalar'}</p>
+                <p className="mt-1 text-sm text-gray-500">{locale === 'en' ? 'The newest orders and their current status.' : 'Eng yangi buyurtmalar va ularning holati.'}</p>
               </div>
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-700">24 ta</span>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-700">24 {locale === 'en' ? 'items' : 'ta'}</span>
             </div>
             <div className="space-y-4">
               <div className="rounded-3xl bg-slate-900/5 p-4">
-                <p className="text-sm font-medium text-gray-900">#1425 — Pizza + salat</p>
-                <p className="mt-1 text-sm text-gray-500">Yangi, 8 daqiqa oldin</p>
+                <p className="text-sm font-medium text-gray-900">#1425 — Pizza + salad</p>
+                <p className="mt-1 text-sm text-gray-500">{locale === 'en' ? 'New, 8 minutes ago' : 'Yangi, 8 daqiqa oldin'}</p>
               </div>
               <div className="rounded-3xl bg-slate-900/5 p-4">
-                <p className="text-sm font-medium text-gray-900">#1419 — Lavash + ichimlik</p>
-                <p className="mt-1 text-sm text-gray-500">Tayyorlanmoqda, 11 daqiqa</p>
+                <p className="text-sm font-medium text-gray-900">#1419 — Lavash + drink</p>
+                <p className="mt-1 text-sm text-gray-500">{locale === 'en' ? 'Preparing, 11 minutes' : 'Tayyorlanmoqda, 11 daqiqa'}</p>
               </div>
               <div className="rounded-3xl bg-slate-900/5 p-4">
-                <p className="text-sm font-medium text-gray-900">#1415 — Burger + kartoshka</p>
-                <p className="mt-1 text-sm text-gray-500">Yetkazishga tayyor</p>
+                <p className="text-sm font-medium text-gray-900">#1415 — Burger + fries</p>
+                <p className="mt-1 text-sm text-gray-500">{locale === 'en' ? 'Ready for delivery' : 'Yetkazishga tayyor'}</p>
               </div>
             </div>
           </section>
 
           <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-gray-900">Tezkor harakatlar</p>
+            <p className="text-sm font-semibold text-gray-900">{t('dashboard.quickActions')}</p>
             <div className="mt-5 space-y-3">
               {actions.map((action) => (
                 <a
@@ -156,29 +160,29 @@ export default function DashboardPage() {
         <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-gray-900">To'lov va filial ko'rsatkichlari</p>
-              <p className="mt-1 text-sm text-gray-500">Eng so'nggi trendlar va filial ishlashi.</p>
+              <p className="text-sm font-semibold text-gray-900">{locale === 'en' ? 'Payment and branch metrics' : 'To\'lov va filial ko\'rsatkichlari'}</p>
+              <p className="mt-1 text-sm text-gray-500">{locale === 'en' ? 'The latest trends and branch activity.' : 'Eng so\'nggi trendlar va filial ishlashi.'}</p>
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-3xl border border-gray-200 bg-slate-50 p-5">
-              <p className="text-sm text-gray-500">To'lovlar</p>
+              <p className="text-sm text-gray-500">{t('dashboard.payments')}</p>
               <p className="mt-3 text-2xl font-semibold text-gray-900">\u20B8 4,980,000</p>
               <p className="mt-2 text-sm text-gray-500">Ushbu hafta</p>
             </div>
             <div className="rounded-3xl border border-gray-200 bg-slate-50 p-5">
-              <p className="text-sm text-gray-500">Ishlovchi filiallar</p>
+              <p className="text-sm text-gray-500">{locale === 'en' ? 'Active branches' : 'Ishlovchi filiallar'}</p>
               <p className="mt-3 text-2xl font-semibold text-gray-900">6</p>
               <p className="mt-2 text-sm text-gray-500">Faol filiallar soni</p>
             </div>
             <div className="rounded-3xl border border-gray-200 bg-slate-50 p-5">
-              <p className="text-sm text-gray-500">O'rtacha buyurtma</p>
+              <p className="text-sm text-gray-500">{locale === 'en' ? 'Average order' : 'O\'rtacha buyurtma'}</p>
               <p className="mt-3 text-2xl font-semibold text-gray-900">\u20B8 48,200</p>
-              <p className="mt-2 text-sm text-gray-500">So'nggi 24 soat</p>
+              <p className="mt-2 text-sm text-gray-500">So&apos;nggi 24 soat</p>
             </div>
             <div className="rounded-3xl border border-gray-200 bg-slate-50 p-5">
-              <p className="text-sm text-gray-500">Menyu mavjudligi</p>
+              <p className="text-sm text-gray-500">{locale === 'en' ? 'Menu availability' : 'Menyu mavjudligi'}</p>
               <p className="mt-3 text-2xl font-semibold text-gray-900">78%</p>
               <p className="mt-2 text-sm text-gray-500">Aktiv mahsulotlar</p>
             </div>

@@ -9,6 +9,7 @@ export const api = axios.create({
 
 // Har bir so'rovga access token qo'shamiz
 api.interceptors.request.use((config) => {
+  if (typeof window === 'undefined') return config
   const token = localStorage.getItem('access_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
@@ -24,9 +25,10 @@ api.interceptors.response.use(
       const refresh = localStorage.getItem('refresh_token')
       if (refresh) {
         try {
-          const { data } = await axios.post(`${BASE_URL}/auth/refresh/`, { refresh })
-          localStorage.setItem('access_token', data.access)
-          original.headers.Authorization = `Bearer ${data.access}`
+          const { data } = await axios.post(`${BASE_URL}/auth/refresh/`, { refresh_token: refresh })
+          const access = data.access_token || data.access
+          localStorage.setItem('access_token', access)
+          original.headers.Authorization = `Bearer ${access}`
           return api(original)
         } catch {
           localStorage.clear()
@@ -45,10 +47,20 @@ api.interceptors.response.use(
 
 // Auth
 export const authApi = {
-  login: (data: { restaurant_slug: string; email: string; password: string }) =>
-    api.post('/auth/login/', data),
+  login: async (data: { restaurant_slug?: string; email: string; password: string }) => {
+    const response = await api.post('/auth/login/', data)
+    const payload = response.data || {}
+    return {
+      ...response,
+      data: {
+        ...payload,
+        access: payload.access_token || payload.access,
+        refresh: payload.refresh_token || payload.refresh,
+      },
+    }
+  },
   me: () => api.get('/auth/me/'),
-  refresh: (refresh: string) => api.post('/auth/refresh/', { refresh }),
+  refresh: (refresh: string) => api.post('/auth/refresh/', { refresh_token: refresh }),
 }
 
 // Branches
@@ -69,13 +81,13 @@ export const menuApi = {
   },
   products: {
     list: (params?: object) => api.get('/products/', { params }),
-    create: (data: any) => {
+    create: (data: FormData | Record<string, unknown>) => {
       if (data instanceof FormData) {
         return api.post('/products/', data, { headers: { 'Content-Type': 'multipart/form-data' } })
       }
       return api.post('/products/', data)
     },
-    update: (id: string, data: any) => {
+    update: (id: string, data: FormData | Record<string, unknown>) => {
       if (data instanceof FormData) {
         return api.patch(`/products/${id}/`, data, { headers: { 'Content-Type': 'multipart/form-data' } })
       }
@@ -97,7 +109,7 @@ export const ordersApi = {
     list: (params?: object) => api.get('/orders/', { params }),
     create: (data: object) => api.post('/orders/', data),
     updateStatus: (id: string, data: object) =>
-      api.patch(`/orders/${id}/status/`, data),
+      api.patch(`/orders/${id}/status`, data),
   },
 }
 

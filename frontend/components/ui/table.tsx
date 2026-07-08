@@ -3,10 +3,10 @@ import React from 'react'
 interface Column {
   key: string
   title: string
-  render?: (row: any) => React.ReactNode
+  render?: (row: Record<string, unknown>) => React.ReactNode
 }
 
-export default function Table({ columns, data }: { columns: Column[]; data: any[] }) {
+export default function Table({ columns, data }: { columns: Column[]; data: Record<string, unknown>[] }) {
   return (
     <div className="overflow-x-auto">
       <div className="glass rounded-2xl p-3">

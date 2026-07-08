@@ -163,9 +163,8 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     field, which drives RBAC inside the API (see tenancy/permissions.py).
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    restaurant = models.ForeignKey(
-        Restaurant, on_delete=models.CASCADE, related_name="users"
-    )
+
+    restaurant = models.ForeignKey('Restaurant', null=True, blank=True, on_delete=models.CASCADE, related_name="users")
     branch = models.ForeignKey(
         Branch, on_delete=models.SET_NULL, related_name="staff", blank=True, null=True,
         help_text="NULL for restaurant-level staff (owner/admin) who aren't tied to one branch.",
